@@ -1,0 +1,2 @@
+source /home/kriti/pawRTOS/build/bootloader/gdbinit/symbols
+source /home/kriti/pawRTOS/build/bootloader/gdbinit/connect
