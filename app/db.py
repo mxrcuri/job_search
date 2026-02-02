@@ -6,7 +6,7 @@ DATABASE_URL = settings.DATABASE_URL
 
 engine = create_engine(
     DATABASE_URL,
-    echo=False,          # set True only if debugging SQL
+    echo=False,
     future=True,
 )
 
