@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-
+from sqlalchemy import desc, asc
+from datetime import date
 from app.db import get_db
 from app.db_models import Job, JobSave, User
 from app.db_schemas import JobOut
@@ -14,9 +15,53 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 # --------------------------------------------------
 @router.get("/", response_model=list[JobOut])
 def list_jobs(
+    page: int = 1,
+    limit: int = 20,
+
+    # 🔎 filters
+    job_type: str | None = None,        # it / et / pm
+    location: str | None = None,
+    deadline_before: date | None = None,
+
+    # 🔽 sorting
+    sort: str = "recent",
+
     db: Session = Depends(get_db),
 ):
-    jobs = db.query(Job).order_by(Job.scraped_at.desc()).all()
+    query = db.query(Job)
+
+    # ------------------
+    # Filters
+    # ------------------
+    if job_type:
+        query = query.filter(Job.job_type == job_type.lower())
+
+    if location:
+        query = query.filter(Job.location.ilike(f"%{location}%"))
+
+    if deadline_before:
+        query = query.filter(Job.deadline <= deadline_before)
+
+    # ------------------
+    # Sorting
+    # ------------------
+    if sort == "oldest":
+        query = query.order_by(asc(Job.scraped_at))
+    elif sort == "deadline":
+        query = query.order_by(asc(Job.deadline))
+    else:  # default = recent
+        query = query.order_by(desc(Job.scraped_at))
+
+    # ------------------
+    # Pagination
+    # ------------------
+    jobs = (
+        query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
     return jobs
 
 
@@ -42,10 +87,7 @@ def save_job(
         .first()
     )
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Job already saved"
-        )
+        return {"message": "Already saved"}
 
     save = JobSave(user_id=current_user.id, job_id=job_id)
     db.add(save)
@@ -92,7 +134,7 @@ def unsave_job(
     )
 
     if not saved:
-        raise HTTPException(status_code=404, detail="Saved job not found")
+        return
 
     db.delete(saved)
     db.commit()

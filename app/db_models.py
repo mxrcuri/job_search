@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Date
 from sqlalchemy.sql import func
 from app.db import Base
 
@@ -13,9 +13,10 @@ class Job(Base):
     description = Column(Text)
     url = Column(String, unique=True, nullable=False)
     source = Column(String)
+    job_type: str | None  
+    deadline: Date | None
     posted_date = Column(DateTime)
     scraped_at = Column(DateTime, server_default=func.now())
-
 
 class User(Base):
     __tablename__ = "users"
@@ -25,7 +26,6 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
-
 class JobSave(Base):
     __tablename__ = "job_saves"
 
@@ -33,3 +33,11 @@ class JobSave(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
     saved_at = Column(DateTime, server_default=func.now())
+
+class EmailNotification(Base):
+    __tablename__ = "email_notifications"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
+    sent_at = Column(DateTime)

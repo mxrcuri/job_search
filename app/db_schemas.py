@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from datetime import datetime, date
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -21,6 +21,8 @@ class JobOut(BaseModel):
     description: str | None
     url: str
     source: str | None
+    job_type: str | None
+    deadline: date | None
     posted_date: datetime | None
     scraped_at: datetime
 
